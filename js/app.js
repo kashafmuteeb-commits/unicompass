@@ -1,4 +1,4 @@
-import { createClient } from "https://qopuyrsriphebzzgvecl.supabase.co";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 /* =========================================================
    1. SUPABASE CONFIGURATION
@@ -147,23 +147,22 @@ async function refreshData() {
   renderPage(currentPage);
 }
 
+
 /* =========================================================
    4. AUTHENTICATION SCREEN
 ========================================================= */
 
 function setMode(nextMode) {
   mode = nextMode;
-
   clearMessage();
 
   const signup = mode === "signup";
   const reset = mode === "reset";
 
   $("nameField").classList.toggle("hidden", !signup);
-
   $("fullName").required = signup;
-  $("password").required = !reset;
 
+  $("password").required = !reset;
   $("password").classList.toggle("hidden", reset);
   $("passwordHint").classList.toggle("hidden", reset);
 
@@ -212,16 +211,19 @@ function showLogin() {
   appView.style.display = "none";
 
   authView.classList.remove("hidden");
-
   clearMessage();
 }
 
 async function handleAuthSubmit(event) {
   event.preventDefault();
-
   clearMessage();
 
   const button = authForm.querySelector('button[type="submit"]');
+
+  if (!button) {
+    showMessage("Submit button not found.", "error");
+    return;
+  }
 
   setButtonLoading(button, true, "Please wait...");
 
@@ -239,9 +241,21 @@ async function handleAuthSubmit(event) {
     window.location.origin + window.location.pathname;
 
   try {
+    if (!email) {
+      throw new Error("Please enter your email address.");
+    }
+
+    if (mode !== "reset" && !password) {
+      throw new Error("Please enter your password.");
+    }
+
     if (mode === "signup") {
       if (!fullName) {
         throw new Error("Please enter your full name.");
+      }
+
+      if (password.length < 6) {
+        throw new Error("Password must be at least 6 characters.");
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -257,29 +271,27 @@ async function handleAuthSubmit(event) {
 
       if (error) throw error;
 
-      if (data.session) {
-        showMessage("Account created successfully.", "success");
-      } else {
-        showMessage(
-          "Account created. Check your email and verify your account before signing in.",
-          "success"
-        );
-      }
-
       authForm.reset();
       setMode("signin");
-    }
 
-    else if (mode === "signin") {
+      showMessage(
+        data.session
+          ? "Account created successfully. You can now continue."
+          : "Account created. Please verify your email before signing in.",
+        "success"
+      );
+
+    } else if (mode === "signin") {
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) throw error;
-    }
 
-    else if (mode === "reset") {
+    } else if (mode === "reset") {
+
       const { error } = await supabase.auth.resetPasswordForEmail(
         email,
         {
@@ -290,18 +302,19 @@ async function handleAuthSubmit(event) {
       if (error) throw error;
 
       showMessage(
-        "If an account exists for this email, a password reset link has been sent.",
+        "If an account exists, a password reset link has been sent.",
         "success"
       );
     }
 
   } catch (error) {
     showMessage(getErrorMessage(error), "error");
+
   } finally {
     setButtonLoading(button, false);
   }
-}
-
+     }
+         
 /* =========================================================
    5. LOAD USER DATA FROM SUPABASE
 ========================================================= */
@@ -818,3 +831,83 @@ function journalPage() {
     type="number" min="0" max="24"
     step="0.25" value="0">
 </div>
+        <div class="form-field full-width">
+          <label>What did you work on?</label>
+          <textarea class="control" name="description" rows="5"
+            placeholder="Describe what you completed or learned..." required></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">
+            Save journal entry
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="row-between">
+        <h3>Previous entries</h3>
+        <span class="badge">${journal.length} entries</span>
+      </div>
+
+      <div class="entry-list">
+        ${
+          journal.length
+            ? journal.map(entry => `
+              <article class="entry-card">
+                <div class="row-between">
+                  <h4>${escapeHTML(entry.title)}</h4>
+                  <span>${escapeHTML(entry.entry_date || "")}</span>
+                </div>
+                <p>${escapeHTML(entry.description || "")}</p>
+                <small>${Number(entry.hours || 0)} hours</small>
+              </article>
+            `).join("")
+            : `<p class="empty-state">No journal entries yet. Start recording your progress.</p>`
+        }
+      </div>
+    </section>
+  `;
+}
+   
+/* =========================================================
+   AUTHENTICATION INITIALIZATION
+========================================================= */
+
+authForm.addEventListener("submit", handleAuthSubmit);
+
+$("forgotButton").addEventListener("click", () => {
+  setMode("reset");
+});
+
+async function initializeApp() {
+  setMode("signin");
+
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error) {
+    showMessage(error.message, "error");
+    showLogin();
+    return;
+  }
+
+  if (data.session) {
+    await showApp(data.session.user);
+  } else {
+    showLogin();
+  }
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === "SIGNED_IN" && session) {
+      await showApp(session.user);
+    }
+
+    if (event === "SIGNED_OUT") {
+      showLogin();
+    }
+  });
+}
+
+initializeApp();
