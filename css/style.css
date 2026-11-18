@@ -761,3 +761,160 @@ select:focus {
     align-items: flex-start;
   }
 }
+/* =====================================
+   OPPORTUNITIES SECTION
+===================================== */
+
+.opportunity-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  flex-wrap: wrap;
+}
+
+.opportunity-card strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #172033;
+}
+
+.opportunity-card p {
+  margin: 5px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.opportunity-card a {
+  display: inline-block;
+  margin-top: 10px;
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.opportunity-card a:hover {
+  text-decoration: underline;
+}
+
+.opportunity-card button {
+  flex-shrink: 0;
+}
+
+#opportunitySearch,
+#opportunityCategory {
+  box-sizing: border-box;
+}
+
+#opportunitySearch:focus,
+#opportunityCategory:focus {
+  outline: 2px solid #818cf8;
+  border-color: #6366f1;
+}
+
+@media (max-width: 600px) {
+  .opportunity-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .opportunity-card button {
+    width: 100%;
+  }
+}
+/* =====================================
+   AUTHENTICATION HTML COMPATIBILITY
+===================================== */
+
+.auth-view {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 18px;
+  background: var(--bg);
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 460px;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.auth-brand h1 {
+  font-size: 25px;
+  margin: 10px 0 5px;
+}
+
+.auth-brand p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.brand-icon {
+  width: 45px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  margin: auto;
+  background: var(--primary);
+  color: white;
+  border-radius: 13px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.auth-card {
+  background: white;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+}
+
+.auth-card h2 {
+  font-size: 25px;
+  margin: 12px 0;
+}
+
+.auth-card > p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 25px;
+}
+
+.auth-card .form-field {
+  margin-bottom: 18px;
+}
+
+.auth-card .btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 13px;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 25px;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 23px 18px;
+  }
+}
