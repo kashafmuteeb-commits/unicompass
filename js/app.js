@@ -1,8 +1,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-/* =========================================================
+/* =====================================================
    1. SUPABASE CONFIGURATION
-========================================================= */
+===================================================== */
 
 const SUPABASE_URL = "https://qopuyrsriphebzzgvecl.supabase.co";
 
@@ -14,9 +14,9 @@ const supabase = createClient(
   SUPABASE_PUBLISHABLE_KEY
 );
 
-/* =========================================================
-   2. DOM ELEMENTS AND APPLICATION STATE
-========================================================= */
+/* =====================================================
+   2. DOM ELEMENTS AND STATE
+===================================================== */
 
 const $ = (id) => document.getElementById(id);
 
@@ -29,6 +29,7 @@ const pageContent = $("pageContent");
 let mode = "signin";
 let currentUser = null;
 let currentPage = "overview";
+let profile = {};
 
 let universities = [];
 let goals = [];
@@ -40,18 +41,27 @@ let saved = [];
 
 let loading = false;
 
-/* =========================================================
+/* =====================================================
    3. GENERAL HELPERS
-========================================================= */
+===================================================== */
 
 function escapeHtml(value = "") {
-  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;"
-  })[character]);
+  })[char]);
+}
+
+function today() {
+  const date = new Date();
+  const offset = date.getTimezoneOffset() * 60000;
+
+  return new Date(date.getTime() - offset)
+    .toISOString()
+    .slice(0, 10);
 }
 
 function dateText(value) {
@@ -66,15 +76,6 @@ function dateText(value) {
     month: "short",
     year: "numeric"
   });
-}
-
-function today() {
-  const date = new Date();
-  const offset = date.getTimezoneOffset() * 60000;
-
-  return new Date(date.getTime() - offset)
-    .toISOString()
-    .slice(0, 10);
 }
 
 function showMessage(message, type = "error") {
@@ -99,7 +100,6 @@ function showAppMessage(message, type = "success") {
   if (!element) {
     element = document.createElement("div");
     element.id = "appFeedback";
-
     pageContent.prepend(element);
   }
 
@@ -111,46 +111,40 @@ function showAppMessage(message, type = "success") {
     border-radius: 10px;
     background: ${type === "error" ? "#fee2e2" : "#dcfce7"};
     color: ${type === "error" ? "#991b1b" : "#166534"};
-    font-size: 14px;
   `;
-
-  setTimeout(() => {
-    element?.remove();
-  }, 5000);
-}
-
-function setButtonLoading(button, isLoading, loadingText = "Saving...") {
-  if (!button) return;
-
-  if (isLoading) {
-    button.dataset.originalText = button.textContent;
-    button.textContent = loadingText;
-    button.disabled = true;
-  } else {
-    button.textContent = button.dataset.originalText || button.textContent;
-    button.disabled = false;
-  }
 }
 
 function getErrorMessage(error) {
   return error?.message || "Something went wrong. Please try again.";
 }
 
-function isSaved(opportunityId) {
+function setButtonLoading(button, state, text = "Please wait...") {
+  if (!button) return;
+
+  if (state) {
+    button.dataset.originalText = button.textContent;
+    button.textContent = text;
+    button.disabled = true;
+  } else {
+    button.textContent =
+      button.dataset.originalText || button.textContent;
+    button.disabled = false;
+  }
+}
+
+function formObject(form) {
+  return Object.fromEntries(new FormData(form).entries());
+}
+
+function isSaved(id) {
   return saved.some(
-    item => String(item.opportunity_id) === String(opportunityId)
+    item => String(item.opportunity_id) === String(id)
   );
 }
 
-async function refreshData() {
-  await loadData();
-  renderPage(currentPage);
-}
-
-
-/* =========================================================
-   4. AUTHENTICATION SCREEN
-========================================================= */
+/* =====================================================
+   4. AUTHENTICATION
+===================================================== */
 
 function setMode(nextMode) {
   mode = nextMode;
@@ -186,7 +180,7 @@ function setMode(nextMode) {
   $("formSubtitle").textContent = signup
     ? "Start organizing your student journey."
     : reset
-      ? "We'll send you a password reset link."
+      ? "We will send you a password reset link."
       : "Pick up where you left off.";
 
   $("submitText").textContent = signup
@@ -211,6 +205,7 @@ function showLogin() {
   appView.style.display = "none";
 
   authView.classList.remove("hidden");
+
   clearMessage();
 }
 
@@ -218,27 +213,16 @@ async function handleAuthSubmit(event) {
   event.preventDefault();
   clearMessage();
 
-  const button = authForm.querySelector('button[type="submit"]');
+  const button = $("submitButton");
 
-  if (!button) {
-    showMessage("Submit button not found.", "error");
-    return;
-  }
-
-  setButtonLoading(button, true, "Please wait...");
-
-  const formData = new FormData(authForm);
-
-  const email = String(formData.get("email") || "")
-    .trim()
-    .toLowerCase();
-
-  const password = String(formData.get("password") || "");
-
-  const fullName = String(formData.get("fullName") || "").trim();
+  const email = $("email").value.trim().toLowerCase();
+  const password = $("password").value;
+  const fullName = $("fullName").value.trim();
 
   const redirectUrl =
     window.location.origin + window.location.pathname;
+
+  setButtonLoading(button, true);
 
   try {
     if (!email) {
@@ -254,8 +238,8 @@ async function handleAuthSubmit(event) {
         throw new Error("Please enter your full name.");
       }
 
-      if (password.length < 6) {
-        throw new Error("Password must be at least 6 characters.");
+      if (password.length < 8) {
+        throw new Error("Password must contain at least 8 characters.");
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -276,13 +260,12 @@ async function handleAuthSubmit(event) {
 
       showMessage(
         data.session
-          ? "Account created successfully. You can now continue."
-          : "Account created. Please verify your email before signing in.",
+          ? "Account created successfully."
+          : "Account created. Verify your email before signing in.",
         "success"
       );
 
     } else if (mode === "signin") {
-
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -291,12 +274,9 @@ async function handleAuthSubmit(event) {
       if (error) throw error;
 
     } else if (mode === "reset") {
-
       const { error } = await supabase.auth.resetPasswordForEmail(
         email,
-        {
-          redirectTo: redirectUrl
-        }
+        { redirectTo: redirectUrl }
       );
 
       if (error) throw error;
@@ -309,15 +289,14 @@ async function handleAuthSubmit(event) {
 
   } catch (error) {
     showMessage(getErrorMessage(error), "error");
-
   } finally {
     setButtonLoading(button, false);
   }
-     }
-         
-/* =========================================================
-   5. LOAD USER DATA FROM SUPABASE
-========================================================= */
+}
+
+/* =====================================================
+   5. LOAD DATA
+===================================================== */
 
 async function loadData() {
   if (!currentUser) {
@@ -326,91 +305,101 @@ async function loadData() {
 
   const uid = currentUser.id;
 
-  const queries = await Promise.all([
-    supabase
-      .from("profiles")
+  const results = await Promise.all([
+    supabase.from("profiles")
       .select("*")
       .eq("id", uid)
       .maybeSingle(),
 
-    supabase
-      .from("universities")
+    supabase.from("universities")
       .select("*")
       .eq("active", true)
       .order("name"),
 
-    supabase
-      .from("student_goals")
-      .select("*, universities(*)")
-      .eq("user_id", uid)
-      .order("created_at", { ascending: false }),
-
-    supabase
-      .from("achievements")
+    supabase.from("student_goals")
       .select("*")
       .eq("user_id", uid)
       .order("created_at", { ascending: false }),
 
-    supabase
-      .from("roadmap_tasks")
+    supabase.from("achievements")
       .select("*")
       .eq("user_id", uid)
-      .order("sort_order")
-      .order("created_at"),
+      .order("created_at", { ascending: false }),
 
-    supabase
-      .from("journal_entries")
+    supabase.from("roadmap_tasks")
+      .select("*")
+      .eq("user_id", uid)
+      .order("sort_order"),
+
+    supabase.from("journal_entries")
       .select("*")
       .eq("user_id", uid)
       .order("entry_date", { ascending: false }),
 
-    supabase
-      .from("opportunities")
+    supabase.from("opportunities")
       .select("*")
       .eq("active", true)
       .order("deadline"),
 
-    supabase
-      .from("saved_opportunities")
+    supabase.from("saved_opportunities")
       .select("*")
       .eq("user_id", uid)
   ]);
 
-  for (const query of queries) {
-    if (query.error) throw query.error;
-  }
+  const names = [
+    "profiles",
+    "universities",
+    "student goals",
+    "achievements",
+    "roadmap tasks",
+    "journal entries",
+    "opportunities",
+    "saved opportunities"
+  ];
 
-  [
-    window.profile,
-    universities,
-    goals,
-    achievements,
-    tasks,
-    journal,
-    opportunities,
-    saved
-  ] = queries.map(query => query.data);
+  results.forEach((result, index) => {
+    if (result.error) {
+      throw new Error(
+        names[index] + ": " + result.error.message
+      );
+    }
+  });
 
-  if (!window.profile) {
+  profile = results[0].data || {};
+  universities = results[1].data || [];
+  goals = results[2].data || [];
+  achievements = results[3].data || [];
+  tasks = results[4].data || [];
+  journal = results[5].data || [];
+  opportunities = results[6].data || [];
+  saved = results[7].data || [];
+
+  if (!profile.id) {
     const newProfile = {
       id: uid,
-      full_name:
-        currentUser.user_metadata?.full_name || ""
+      full_name: currentUser.user_metadata?.full_name || ""
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
-      .upsert(newProfile);
+      .upsert(newProfile)
+      .select()
+      .single();
 
     if (error) throw error;
 
-    window.profile = newProfile;
+    profile = data;
   }
 }
 
-/* =========================================================
-   6. SHOW DASHBOARD
-========================================================= */
+async function refreshData() {
+  await loadData();
+  renderPage(currentPage);
+}
+
+/* =====================================================
+   6. SHOW APP
+===================================================== */
 
 async function showApp(user) {
   if (!user) return;
@@ -418,7 +407,6 @@ async function showApp(user) {
   currentUser = user;
 
   authView.classList.add("hidden");
-
   appView.classList.remove("hidden");
   appView.style.display = "grid";
 
@@ -435,6 +423,13 @@ async function showApp(user) {
 
   loading = true;
 
+  pageContent.innerHTML = `
+    <section class="panel">
+      <h2>Loading your workspace...</h2>
+      <p>Please wait while your records are loaded.</p>
+    </section>
+  `;
+
   try {
     await loadData();
     renderPage(currentPage);
@@ -445,19 +440,22 @@ async function showApp(user) {
       <section class="panel">
         <h2>Unable to load your dashboard</h2>
         <p>${escapeHtml(getErrorMessage(error))}</p>
-        <button class="btn" id="retryLoading">Try again</button>
+        <button class="btn" id="retryLoading" type="button">
+          Try again
+        </button>
       </section>
     `;
 
     $("retryLoading").onclick = () => showApp(user);
+
   } finally {
     loading = false;
   }
 }
 
-/* =========================================================
+/* =====================================================
    7. NAVIGATION
-========================================================= */
+===================================================== */
 
 function nav(page) {
   const allowedPages = [
@@ -473,10 +471,10 @@ function nav(page) {
 
   currentPage = page;
 
-  document.querySelectorAll(".nav-link").forEach(button => {
-    button.classList.toggle(
+  document.querySelectorAll(".nav-link").forEach(link => {
+    link.classList.toggle(
       "active",
-      button.dataset.page === page
+      link.dataset.page === page
     );
   });
 
@@ -491,21 +489,12 @@ function header(eyebrow, title, subtitle = "") {
         <h1>${escapeHtml(title)}</h1>
         <p>${escapeHtml(subtitle)}</p>
       </div>
-
-      <div class="date-chip">
-        ${dateText(today())}
-      </div>
+      <div class="date-chip">${dateText(today())}</div>
     </div>
   `;
 }
 
-/* =========================================================
-   8. PAGE RENDERING
-========================================================= */
-
 function renderPage(page) {
-  if (!pageContent) return;
-
   const pages = {
     overview: overviewPage,
     profile: profilePage,
@@ -525,42 +514,35 @@ function renderPage(page) {
     page.slice(1);
 
   pageContent.innerHTML = pages[page]();
-
-  bindPageActions();
 }
 
-/* =========================================================
-   9. OVERVIEW PAGE
-========================================================= */
+/* =====================================================
+   8. OVERVIEW
+===================================================== */
 
 function overviewPage() {
   const done = tasks.filter(task => task.status === "done").length;
 
-  const pct = tasks.length
+  const percent = tasks.length
     ? Math.round((done / tasks.length) * 100)
     : 0;
 
   return `
     ${header(
       "YOUR STUDENT WORKSPACE",
-      `Welcome back, ${window.profile?.full_name || currentUser?.user_metadata?.full_name || "Student"}.`,
-      "Your next step should be clear, realistic and based on your own goals."
+      `Welcome back, ${profile.full_name || currentUser?.user_metadata?.full_name || "Student"}.`,
+      "Your academic journey, organized in one place."
     )}
 
     <div class="setup-banner">
       <div class="setup-icon">✦</div>
-
       <div>
         <strong>Your journey, one step at a time.</strong>
-        <p>
-          Select a target university, record what you have already done,
-          then use your roadmap to decide what comes next.
-        </p>
+        <p>Record your work, choose universities and build your next steps.</p>
       </div>
     </div>
 
     <div class="stats-grid">
-
       <article class="stat-card">
         <span class="stat-label">ROADMAP</span>
         <strong>${done}/${tasks.length}</strong>
@@ -578,41 +560,34 @@ function overviewPage() {
         <strong>${journal.length}</strong>
         <span class="stat-note">Journal entries</span>
       </article>
-
     </div>
 
     <div class="section-heading">
       <h2>Your progress</h2>
-      <span class="badge">${pct}% complete</span>
+      <span class="badge">${percent}% complete</span>
     </div>
 
     <div class="progress">
-      <span style="width:${pct}%"></span>
+      <span style="width:${percent}%"></span>
     </div>
 
     <div class="two-grid" style="margin-top:18px">
-
       <section class="panel">
         <h3>Your next steps</h3>
-
         ${
-          tasks
-            .filter(task => task.status !== "done")
+          tasks.filter(task => task.status !== "done")
             .slice(0, 4)
             .map(task => `
               <div class="task-row">
                 <span class="task-num">→</span>
-
                 <div>
                   <strong>${escapeHtml(task.title)}</strong>
                   <p>${escapeHtml(task.description || "")}</p>
                 </div>
               </div>
-            `)
-            .join("") ||
-          '<div class="empty">Choose a university to create your first roadmap.</div>'
+            `).join("") ||
+          '<p class="empty">No pending tasks. Add your first roadmap task.</p>'
         }
-
         <div class="actions">
           <button class="btn" data-go="roadmap">Open roadmap</button>
         </div>
@@ -620,50 +595,49 @@ function overviewPage() {
 
       <section class="panel">
         <h3>Your university goals</h3>
-
         ${
-          goals.map(goal => `
-            <div class="list-row">
-              <div>
-                <strong>${escapeHtml(goal.universities?.name || "University")}</strong>
-                <p>${escapeHtml(goal.subject || goal.degree_level || "Target university")}</p>
-              </div>
-            </div>
-          `).join("") ||
-          '<div class="empty">No university selected yet.</div>'
-        }
+          goals.map(goal => {
+            const university = universities.find(
+              item => item.id === goal.university_id
+            );
 
+            return `
+              <div class="list-row">
+                <div>
+                  <strong>${escapeHtml(university?.name || "University")}</strong>
+                  <p>${escapeHtml(goal.subject || goal.degree_level || "")}</p>
+                </div>
+              </div>
+            `;
+          }).join("") ||
+          '<p class="empty">No university selected yet.</p>'
+        }
         <div class="actions">
           <button class="btn secondary" data-go="universities">
             Choose university
           </button>
         </div>
       </section>
-
     </div>
   `;
 }
 
-/* =========================================================
-   10. STUDENT PROFILE AND ACHIEVEMENTS
-========================================================= */
+/* =====================================================
+   9. STUDENT PROFILE AND ACHIEVEMENTS
+===================================================== */
 
 function profilePage() {
-  const profile = window.profile || {};
-
   return `
     ${header(
       "YOUR DETAILS",
       "Student profile",
-      "Keep your academic background and intended study plans up to date."
+      "Keep your academic information updated."
     )}
 
     <section class="panel">
-
       <h3>Personal and academic information</h3>
 
       <form id="profileForm" class="form-grid">
-
         <div class="form-field">
           <label>Full name</label>
           <input class="control" name="full_name"
@@ -671,7 +645,7 @@ function profilePage() {
         </div>
 
         <div class="form-field">
-          <label>Country of residence</label>
+          <label>Country</label>
           <input class="control" name="country"
             value="${escapeHtml(profile.country)}"
             placeholder="e.g. Pakistan">
@@ -681,21 +655,19 @@ function profilePage() {
           <label>Current education</label>
           <input class="control" name="current_education"
             value="${escapeHtml(profile.current_education)}"
-            placeholder="e.g. Grade 11 / A Levels">
+            placeholder="e.g. Grade 11">
         </div>
 
         <div class="form-field">
           <label>Intended degree</label>
           <select class="control" name="intended_degree">
             <option value="">Choose</option>
-
             ${["Bachelor's", "Master's", "Doctorate", "Other"].map(value => `
               <option value="${escapeHtml(value)}"
                 ${profile.intended_degree === value ? "selected" : ""}>
                 ${escapeHtml(value)}
               </option>
             `).join("")}
-
           </select>
         </div>
 
@@ -717,19 +689,16 @@ function profilePage() {
         <div class="form-field full">
           <button class="btn" type="submit">Save profile</button>
         </div>
-
       </form>
     </section>
 
     <section class="panel">
-
       <div class="row-between">
         <h3>Achievements and activities</h3>
         <span class="badge">${achievements.length} saved</span>
       </div>
 
       <form id="achievementForm" class="form-grid">
-
         <div class="form-field">
           <label>Achievement / activity</label>
           <input class="control" name="title" required>
@@ -749,71 +718,59 @@ function profilePage() {
 
         <div class="form-field full">
           <label>Description</label>
-          <textarea name="description"
-            placeholder="What did you do? What was your role?"></textarea>
+          <textarea class="control" name="description"></textarea>
         </div>
 
         <div class="form-field">
-          <label>Date</label>
+          <label>Date completed</label>
           <input class="control" type="date" name="date_completed">
         </div>
 
         <div class="form-field">
           <label>Evidence URL (optional)</label>
-          <input class="control" name="evidence_url"
-            type="url" placeholder="https://...">
+          <input class="control" name="evidence_url" type="url">
         </div>
 
         <div class="form-field full">
           <button class="btn" type="submit">Add achievement</button>
         </div>
-
       </form>
 
       ${
         achievements.map(item => `
           <div class="list-row">
-
             <div>
               <strong>${escapeHtml(item.title)}</strong>
-              <p>
-                ${escapeHtml(item.category)}
-                · ${dateText(item.date_completed)}
-              </p>
+              <p>${escapeHtml(item.category || "Other")} · ${dateText(item.date_completed)}</p>
             </div>
-
             <button class="btn danger"
               data-delete-achievement="${item.id}">
               Delete
             </button>
-
           </div>
         `).join("") ||
-        '<div class="empty">No achievements added yet.</div>'
+        '<p class="empty">No achievements added yet.</p>'
       }
-
     </section>
   `;
 }
 
-/* =========================================================
-   11. DAILY JOURNAL
-========================================================= */
+/* =====================================================
+   10. DAILY JOURNAL
+===================================================== */
 
 function journalPage() {
   return `
     ${header(
       "YOUR DAILY RECORD",
       "Daily journal",
-      "Record what you worked on, what you learned and the time you invested."
+      "Record what you worked on and what you learned."
     )}
 
     <section class="panel">
-
       <h3>New journal entry</h3>
 
       <form id="journalForm" class="form-grid">
-
         <div class="form-field">
           <label>Title</label>
           <input class="control" name="title" required
@@ -824,90 +781,7 @@ function journalPage() {
           <label>Date</label>
           <input class="control" name="entry_date"
             type="date" value="${today()}" required>
-            </div>
-            <div class="form-field">
-  <label>Hours (optional)</label>
-  <input class="control" name="hours"
-    type="number" min="0" max="24"
-    step="0.25" value="0">
-</div>
-        <div class="form-field full-width">
-          <label>What did you work on?</label>
-          <textarea class="control" name="description" rows="5"
-            placeholder="Describe what you completed or learned..." required></textarea>
         </div>
 
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">
-            Save journal entry
-          </button>
-        </div>
-
-      </form>
-    </section>
-
-    <section class="panel">
-      <div class="row-between">
-        <h3>Previous entries</h3>
-        <span class="badge">${journal.length} entries</span>
-      </div>
-
-      <div class="entry-list">
-        ${
-          journal.length
-            ? journal.map(entry => `
-              <article class="entry-card">
-                <div class="row-between">
-                  <h4>${escapeHTML(entry.title)}</h4>
-                  <span>${escapeHTML(entry.entry_date || "")}</span>
-                </div>
-                <p>${escapeHTML(entry.description || "")}</p>
-                <small>${Number(entry.hours || 0)} hours</small>
-              </article>
-            `).join("")
-            : `<p class="empty-state">No journal entries yet. Start recording your progress.</p>`
-        }
-      </div>
-    </section>
-  `;
-}
-   
-/* =========================================================
-   AUTHENTICATION INITIALIZATION
-========================================================= */
-
-authForm.addEventListener("submit", handleAuthSubmit);
-
-$("forgotButton").addEventListener("click", () => {
-  setMode("reset");
-});
-
-async function initializeApp() {
-  setMode("signin");
-
-  const { data, error } = await supabase.auth.getSession();
-
-  if (error) {
-    showMessage(error.message, "error");
-    showLogin();
-    return;
-  }
-
-  if (data.session) {
-    await showApp(data.session.user);
-  } else {
-    showLogin();
-  }
-
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN" && session) {
-      await showApp(session.user);
-    }
-
-    if (event === "SIGNED_OUT") {
-      showLogin();
-    }
-  });
-}
-
-initializeApp();
+        <div class="form-field">
+          <lab
