@@ -960,3 +960,113 @@ function renderUniversityCards(selectedIds = []) {
   }).join("");
                     }
 
+/* =====================================================
+   20. EVENT LISTENERS AND APP INITIALIZATION
+===================================================== */
+
+// AUTHENTICATION FORM
+if (authForm) {
+  authForm.addEventListener("submit", handleAuthSubmit);
+}
+
+// INITIAL SIGN-IN MODE
+setMode("signin");
+
+// NAVIGATION
+document.addEventListener("click", async function (event) {
+
+  const navLink = event.target.closest(".nav-link");
+
+  if (navLink) {
+    event.preventDefault();
+    nav(navLink.dataset.page);
+    return;
+  }
+
+  const goButton = event.target.closest("[data-go]");
+
+  if (goButton) {
+    nav(goButton.dataset.go);
+    return;
+  }
+
+  // LOGOUT
+  const logoutButton = event.target.closest("#logoutButton");
+
+  if (logoutButton) {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      showAppMessage(error.message, "error");
+    }
+    return;
+  }
+
+  // UNIVERSITY SEARCH FILTER
+  const universityButton = event.target.closest(
+    "[data-university-name-add]"
+  );
+
+  if (universityButton) {
+    await addUniversityGoal(
+      universityButton.dataset.universityNameAdd
+    );
+    return;
+  }
+
+  // RETRY DASHBOARD
+  if (event.target.closest("#retryLoading")) {
+    if (currentUser) await showApp(currentUser);
+  }
+});
+
+// UNIVERSITY SEARCH
+document.addEventListener("input", function (event) {
+  if (event.target.id !== "universitySearch") return;
+
+  filterUniversities();
+});
+
+document.addEventListener("change", function (event) {
+  if (event.target.id !== "universityCountry") return;
+
+  filterUniversities();
+});
+
+// INITIALIZE SUPABASE SESSION
+async function initializeApp() {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) throw error;
+
+    if (data.session) {
+      await showApp(data.session.user);
+    } else {
+      showLogin();
+    }
+
+  } catch (error) {
+    console.error("Initialization error:", error);
+    showLogin();
+    showMessage(getErrorMessage(error), "error");
+  }
+}
+
+// AUTH STATE LISTENER
+supabase.auth.onAuthStateChange((event, session) => {
+
+  if (event === "SIGNED_OUT") {
+    showLogin();
+  }
+
+  if (event === "SIGNED_IN" && session) {
+    // Existing session initialization handles dashboard loading.
+    // Avoid duplicate dashboard requests.
+  }
+
+});
+
+// START APPLICATION
+initializeApp();
+   
