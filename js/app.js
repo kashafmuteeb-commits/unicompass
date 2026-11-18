@@ -1,4 +1,4 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://qopuyrsriphebzzgvecl.supabase.co";
 
 /* =========================================================
    1. SUPABASE CONFIGURATION
