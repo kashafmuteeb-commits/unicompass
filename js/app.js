@@ -1070,3 +1070,135 @@ supabase.auth.onAuthStateChange((event, session) => {
 // START APPLICATION
 initializeApp();
    
+/* =====================================================
+   OPPORTUNITIES PAGE
+===================================================== */
+
+function opportunitiesPage() {
+  return `
+    ${header(
+      "EXPLORE YOUR OPTIONS",
+      "Opportunities",
+      "Find scholarships, competitions and programs."
+    )}
+
+    <section class="panel">
+      <h3>Find opportunities</h3>
+
+      <input
+        class="control"
+        id="opportunitySearch"
+        placeholder="Search opportunities..."
+        style="width:100%;margin-bottom:12px"
+      >
+
+      <select
+        class="control"
+        id="opportunityCategory"
+        style="width:100%;margin-bottom:15px"
+      >
+        <option value="">All categories</option>
+        <option value="Scholarship">Scholarships</option>
+        <option value="Competition">Competitions</option>
+        <option value="Internship">Internships</option>
+        <option value="Summer Program">Summer Programs</option>
+        <option value="Fellowship">Fellowships</option>
+      </select>
+
+      <div id="opportunityResults">
+        ${renderOpportunityCards()}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>My saved opportunities</h3>
+
+      ${
+        opportunities.filter(item => isSaved(item.id)).map(item => `
+          <div class="list-row">
+            <div>
+              <strong>${escapeHtml(item.title)}</strong>
+              <p>${escapeHtml(item.category || "Opportunity")}</p>
+            </div>
+          </div>
+        `).join("") ||
+        '<p class="empty">No saved opportunities yet.</p>'
+      }
+    </section>
+  `;
+}
+
+/* =====================================================
+   OPPORTUNITY CARDS
+===================================================== */
+
+function renderOpportunityCards() {
+  if (!opportunities.length) {
+    return '<p class="empty">No opportunities available yet.</p>';
+  }
+
+  return opportunities.map(item => `
+    <article class="list-row opportunity-card"
+      data-title="${escapeHtml(item.title?.toLowerCase() || "")}"
+      data-category="${escapeHtml(item.category || "")}">
+
+      <div style="flex:1">
+
+        <strong>${escapeHtml(item.title)}</strong>
+
+        <p>${escapeHtml(item.category || "Opportunity")}</p>
+
+        <p>${escapeHtml(item.country || "International")}</p>
+
+        <p>
+          Deadline: ${dateText(item.deadline)}
+        </p>
+
+        <p>${escapeHtml(item.description || "")}</p>
+
+        ${
+          item.website
+            ? `<a href="${escapeHtml(item.website)}"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                 View official details ↗
+               </a>`
+            : ""
+        }
+
+      </div>
+
+      <button
+        class="btn ${isSaved(item.id) ? "secondary" : ""}"
+        data-save-opportunity="${escapeHtml(item.id)}"
+      >
+        ${isSaved(item.id) ? "Saved" : "Save"}
+      </button>
+
+    </article>
+  `).join("");
+}
+
+/* =====================================================
+   FILTER OPPORTUNITIES
+===================================================== */
+
+function filterOpportunities() {
+  const search =
+    $("opportunitySearch")?.value.toLowerCase() || "";
+
+  const category =
+    $("opportunityCategory")?.value || "";
+
+  document.querySelectorAll(".opportunity-card").forEach(card => {
+
+    const matchesSearch =
+      card.dataset.title.includes(search);
+
+    const matchesCategory =
+      !category || card.dataset.category === category;
+
+    card.style.display =
+      matchesSearch && matchesCategory ? "flex" : "none";
+  });
+}
