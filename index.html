@@ -4,12 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f7f8fc">
+  <meta name="description" content="A thoughtful workspace for planning your university journey.">
   <title>UniCompass | Your Student Journey</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/premium.css">
 </head>
 <body>
   <div id="authView" class="auth-view">
-    <div class="auth-container">
+    <section class="auth-story" aria-labelledby="storyTitle">
+      <a class="story-brand" href="#" aria-label="UniCompass home"><span class="brand-icon">U</span><span>UniCompass</span></a>
+      <div class="story-copy">
+        <span class="story-kicker">YOUR NEXT CHAPTER STARTS HERE</span>
+        <h1 id="storyTitle">A clearer path to the university that's right for you.</h1>
+        <p>Bring your goals, applications and daily progress into one calm, focused workspace.</p>
+        <div class="story-visual" aria-hidden="true">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <div class="visual-star star-one">✦</div><div class="visual-star star-two">✧</div>
+          <div class="visual-card visual-card-main"><span class="visual-card-mark">U</span><span><b>Your journey</b><small>One step at a time</small></span><span class="visual-check">✓</span></div>
+          <div class="visual-card visual-card-note"><span class="note-dot"></span><span><b>Keep moving forward</b><small>Plan · Explore · Achieve</small></span></div>
+        </div>
+      </div>
+      <p class="story-foot">Thoughtful planning for ambitious students.</p>
+    </section>
+
+    <main class="auth-container">
       <div class="auth-brand">
         <div class="brand-icon">U</div>
         <h1>UniCompass</h1>
@@ -30,27 +48,26 @@
 
           <div class="form-field">
             <label for="email">Email address</label>
-            <input type="email" id="email" name="email" class="control" placeholder="Enter your email" autocomplete="email" required>
+            <input type="email" id="email" name="email" class="control" placeholder="you@example.com" autocomplete="email" required>
           </div>
 
-          <div class="form-field">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" class="control" placeholder="Enter your password" autocomplete="current-password" required>
+          <div class="form-field password-field">
+            <div class="password-label-row"><label for="password">Password</label><button type="button" id="forgotButton" class="text-button">Forgot password?</button></div>
+            <div class="password-control">
+              <input type="password" id="password" name="password" class="control" placeholder="Enter your password" autocomplete="current-password" required>
+              <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
             <small id="passwordHint">Minimum 8 characters for new accounts.</small>
           </div>
 
-          <button type="button" id="forgotButton" class="text-button">Forgot password?</button>
-          <button type="submit" id="submitButton" class="btn"><span id="submitText">Sign in</span></button>
+          <button type="submit" id="submitButton" class="btn"><span id="submitText">Sign in</span><span class="button-arrow" aria-hidden="true">→</span></button>
         </form>
 
-        <div id="switchCopy" class="auth-switch">
-          New to UniCompass?
-          <button type="button" class="text-button" id="switchMode">Create an account</button>
-        </div>
+        <div id="switchCopy" class="auth-switch">New to UniCompass? <button type="button" class="text-button" id="switchMode">Create an account</button></div>
       </div>
 
       <p class="auth-footer">Your academic journey starts here.</p>
-    </div>
+    </main>
   </div>
 
   <div id="appView" class="app-shell hidden">
@@ -69,22 +86,20 @@
       <div class="sidebar-bottom">
         <div class="user-mini">
           <div id="userAvatar" class="avatar">S</div>
-          <div>
-            <strong id="sidebarName">Student</strong>
-            <p id="sidebarEmail"></p>
-          </div>
+          <div><strong id="sidebarName">Student</strong><p id="sidebarEmail"></p></div>
         </div>
         <button id="logoutButton" class="signout-button" type="button">Sign out</button>
       </div>
     </aside>
 
     <main class="main-content">
-      <header class="topbar"><span id="breadcrumb">Workspace / Overview</span><span>Your student journey</span></header>
-      <div id="pageContent" class="dashboard-content"></div>
+      <header class="topbar"><span id="breadcrumb">Workspace / Overview</span><span class="topbar-caption">YOUR STUDENT JOURNEY</span></header>
+      <div id="pageContent" class="dashboard-content" aria-live="polite"></div>
     </main>
   </div>
 
   <script type="module" src="js/site.js"></script>
   <script type="module" src="js/university-details.js"></script>
+  <script type="module" src="js/ui-enhancements.js"></script>
 </body>
 </html>
