@@ -784,4 +784,179 @@ function journalPage() {
         </div>
 
         <div class="form-field">
-          <lab
+                   <label>What did you work on?</label>
+          <textarea class="control" name="work_done"
+            placeholder="Describe your work today..." required></textarea>
+        </div>
+
+        <div class="form-field full">
+          <label>What did you learn?</label>
+          <textarea class="control" name="learning"
+            placeholder="Record something new you learned."></textarea>
+        </div>
+
+        <div class="form-field full">
+          <label>Next steps</label>
+          <textarea class="control" name="next_steps"
+            placeholder="What will you work on next?"></textarea>
+        </div>
+
+        <div class="form-field full">
+          <button class="btn" type="submit">Save daily entry</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h3>Previous entries</h3>
+      ${
+        journal.map(entry => `
+          <div class="list-row">
+            <div>
+              <strong>${escapeHtml(entry.title)}</strong>
+              <p>${dateText(entry.entry_date)}</p>
+              <p>${escapeHtml(entry.work_done || "")}</p>
+            </div>
+          </div>
+        `).join("") ||
+        '<p class="empty">No journal entries yet.</p>'
+      }
+    </section>
+  `;
+}
+
+/* =====================================================
+   11. UNIVERSITIES
+===================================================== */
+
+const UNIVERSITY_LIST = [
+  { name: "Massachusetts Institute of Technology", country: "USA", field: "Engineering, Science, Technology", website: "https://www.mit.edu" },
+  { name: "Stanford University", country: "USA", field: "Technology, Business, Science", website: "https://www.stanford.edu" },
+  { name: "Harvard University", country: "USA", field: "Medicine, Sciences, Humanities", website: "https://www.harvard.edu" },
+  { name: "University of Oxford", country: "UK", field: "Medicine, Sciences, Humanities", website: "https://www.ox.ac.uk" },
+  { name: "University of Cambridge", country: "UK", field: "Biotechnology, Sciences, Engineering", website: "https://www.cam.ac.uk" },
+  { name: "California Institute of Technology", country: "USA", field: "Science, Engineering", website: "https://www.caltech.edu" },
+  { name: "Princeton University", country: "USA", field: "Research, Mathematics, Science", website: "https://www.princeton.edu" },
+  { name: "Yale University", country: "USA", field: "Medicine, Arts, Sciences", website: "https://www.yale.edu" },
+  { name: "Columbia University", country: "USA", field: "Medicine, Research, Sciences", website: "https://www.columbia.edu" },
+  { name: "University of Chicago", country: "USA", field: "Economics, Science, Research", website: "https://www.uchicago.edu" },
+  { name: "ETH Zurich", country: "Switzerland", field: "Engineering, Technology, Science", website: "https://ethz.ch" },
+  { name: "EPFL", country: "Switzerland", field: "Engineering, Biotechnology, Technology", website: "https://www.epfl.ch" },
+  { name: "Imperial College London", country: "UK", field: "Medicine, Engineering, Science", website: "https://www.imperial.ac.uk" },
+  { name: "University College London", country: "UK", field: "Medicine, Sciences, Arts", website: "https://www.ucl.ac.uk" },
+  { name: "National University of Singapore", country: "Singapore", field: "Science, Business, Technology", website: "https://nus.edu.sg" },
+  { name: "Nanyang Technological University", country: "Singapore", field: "Engineering, Science, Technology", website: "https://www.ntu.edu.sg" },
+  { name: "University of Toronto", country: "Canada", field: "Medicine, Biotechnology, Research", website: "https://www.utoronto.ca" },
+  { name: "University of Melbourne", country: "Australia", field: "Medicine, Biology, Research", website: "https://www.unimelb.edu.au" },
+  { name: "University of Tokyo", country: "Japan", field: "Science, Engineering, Medicine", website: "https://www.u-tokyo.ac.jp" },
+  { name: "Tsinghua University", country: "China", field: "Engineering, Science, Technology", website: "https://www.tsinghua.edu.cn" }
+];
+
+function universitiesPage() {
+  const selectedIds = goals.map(goal =>
+    String(goal.university_id)
+  );
+
+  return `
+    ${header(
+      "YOUR FUTURE",
+      "Explore universities",
+      "Discover and shortlist universities around the world."
+    )}
+
+    <section class="panel">
+      <h3>Find your university</h3>
+
+      <input
+        class="control"
+        id="universitySearch"
+        placeholder="Search university or subject..."
+        style="width:100%;margin-bottom:12px"
+      >
+
+      <select
+        class="control"
+        id="universityCountry"
+        style="width:100%;margin-bottom:18px"
+      >
+        <option value="">All countries</option>
+        ${[...new Set(UNIVERSITY_LIST.map(u => u.country))]
+          .map(country => `
+            <option value="${escapeHtml(country)}">
+              ${escapeHtml(country)}
+            </option>
+          `).join("")}
+      </select>
+
+      <p class="stat-note">
+        20 curated universities available
+      </p>
+
+      <div id="universityResults">
+        ${renderUniversityCards(selectedIds)}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>Your selected universities</h3>
+
+      ${
+        goals.map(goal => {
+          const university = universities.find(
+            item => String(item.id) === String(goal.university_id)
+          );
+
+          return university ? `
+            <div class="list-row">
+              <div>
+                <strong>${escapeHtml(university.name)}</strong>
+                <p>${escapeHtml(university.country || "")}</p>
+              </div>
+              <span class="badge">Selected</span>
+            </div>
+          ` : "";
+        }).join("") ||
+        '<p class="empty">You have not selected a university yet.</p>'
+      }
+    </section>
+  `;
+}
+
+function renderUniversityCards(selectedIds = []) {
+  return UNIVERSITY_LIST.map((university, index) => {
+    const databaseUniversity = universities.find(
+      item => item.name?.toLowerCase() === university.name.toLowerCase()
+    );
+
+    const selected = databaseUniversity &&
+      selectedIds.includes(String(databaseUniversity.id));
+
+    return `
+      <article class="list-row university-card"
+        data-university-name="${escapeHtml(university.name.toLowerCase())}"
+        data-university-country="${escapeHtml(university.country)}"
+        data-university-field="${escapeHtml(university.field.toLowerCase())}"
+      >
+        <div style="flex:1">
+          <strong>${index + 1}. ${escapeHtml(university.name)}</strong>
+          <p>${escapeHtml(university.country)}</p>
+          <p>${escapeHtml(university.field)}</p>
+          <a href="${escapeHtml(university.website)}"
+             target="_blank" rel="noopener noreferrer">
+            Official website ↗
+          </a>
+        </div>
+
+        <button
+          class="btn ${selected ? "secondary" : ""}"
+          data-university-name-add="${escapeHtml(university.name)}"
+          ${selected || !databaseUniversity ? "disabled" : ""}
+        >
+          ${selected ? "Selected" :
+            databaseUniversity ? "Add goal" : "Not in database"}
+        </button>
+      </article>
+    `;
+  }).join("");
+                    }
+
