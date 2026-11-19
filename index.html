@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/premium.css">
   <link rel="stylesheet" href="css/roadmap-upgrade.css">
+  <link rel="stylesheet" href="css/grade-roadmap-dashboard.css">
 </head>
 <body>
   <div id="authView" class="auth-view">
@@ -18,7 +19,7 @@
         <span class="story-kicker">YOUR NEXT CHAPTER STARTS HERE</span>
         <h1 id="storyTitle">A clearer path to the university that's right for you.</h1>
         <p>Bring your goals, applications and daily progress into one calm, focused workspace.</p>
-        <div class="story-visual" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="visual-star star-one">✦</div><div class="visual-star star-two">✧</div><div class="visual-card visual-card-main"><span class="visual-card-mark">U</span><span><b>Your journey</b><small>One step at a time</small></span><span class="visual-check">✓</span></div><div class="visual-card visual-card-note"><span class="note-dot"></span><span><b>Keep moving forward</b><small>Plan · Explore · Achieve</small></span></div></div>
+        <div class="story-visual" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="visual-star star-one">✦</div><div class="visual-star star-two">✦</div><div class="visual-core">U</div></div>
       </div>
       <p class="story-foot">Thoughtful planning for ambitious students.</p>
     </section>
@@ -29,7 +30,7 @@
         <form id="authForm">
           <div id="nameField" class="form-field hidden"><label for="fullName">Full name</label><input type="text" id="fullName" name="fullName" class="control" placeholder="Enter your full name" autocomplete="name"></div>
           <div class="form-field"><label for="email">Email address</label><input type="email" id="email" name="email" class="control" placeholder="you@example.com" autocomplete="email" required></div>
-          <div class="form-field password-field"><div class="password-label-row"><label for="password">Password</label><button type="button" id="forgotButton" class="text-button">Forgot password?</button></div><div class="password-control"><input type="password" id="password" name="password" class="control" placeholder="Enter your password" autocomplete="current-password" required><button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">Show</button></div><small id="passwordHint">Minimum 8 characters for new accounts.</small></div>
+          <div class="form-field password-field"><div class="password-label-row"><label for="password">Password</label><button type="button" id="forgotButton" class="text-button">Forgot password?</button></div><input type="password" id="password" name="password" class="control" autocomplete="current-password" required><small id="passwordHint">Use at least 8 characters.</small></div>
           <button type="submit" id="submitButton" class="btn"><span id="submitText">Sign in</span><span class="button-arrow" aria-hidden="true">→</span></button>
         </form>
         <div id="switchCopy" class="auth-switch">New to UniCompass? <button type="button" class="text-button" id="switchMode">Create an account</button></div>
@@ -47,5 +48,6 @@
   <script type="module" src="js/university-details.js"></script>
   <script type="module" src="js/ui-enhancements.js"></script>
   <script type="module" src="js/roadmap-upgrade.js"></script>
+  <script type="module" src="js/grade-roadmap-dashboard.js"></script>
 </body>
 </html>
