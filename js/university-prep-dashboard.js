@@ -1,204 +1,512 @@
-/*************************************************
- * University Preparation Dashboard (additive)
- * Leaves existing navigation and Universities UI intact.
- *************************************************/
 
-const universityPrepRoot = document.getElementById("pageContent");
+/*******************************************************
+ * UNICOMPASS - UNIVERSITY ADMISSIONS TRACKER
+ * Interactive university planning and progress dashboard
+ *******************************************************/
 
-function universityPrepEscape(value = "") {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
-}
+(() => {
+  const page = document.getElementById("pageContent");
+  if (!page) return;
 
-function universityPrepTodayPlus(days) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
-}
+  const STORAGE_KEY = "unicompass_university_tracker_v1";
 
-function universityPrepTasks(profile = {}) {
-  const education = String(profile.current_education || profile.current_grade || "");
-  const gradeMatch = education.match(/\b(?:grade\s*)?(\d{1,2})\b/i);
-  const grade = gradeMatch ? Number(gradeMatch[1]) : null;
-  const major = String(profile.intended_subject || "");
-  const country = String(profile.country || "");
-  const isEarly = grade && grade <= 10;
+  const escapeHTML = (value = "") =>
+    String(value).replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
+    })[c]);
 
-  const tasks = [];
+  const defaultTasks = [
+    ["SAT preparation", "Academic", "Prepare for the SAT and review weak areas."],
+    ["SAT practice tests", "Academic", "Complete practice tests and record scores."],
+    ["English proficiency", "Academic", "Prepare for IELTS, TOEFL or Duolingo if required."],
+    ["Academic grades", "Academic", "Maintain strong school grades."],
+    ["Subject preparation", "Academic", "Develop knowledge in your intended major."],
+    ["MUN and debate", "Extracurricular", "Participate in conferences and debate."],
+    ["Sports and football", "Extracurricular", "Participate in sports and record achievements."],
+    ["Scientific research", "Extracurricular", "Conduct or contribute to research projects."],
+    ["Volunteering", "Extracurricular", "Participate in community service."],
+    ["Leadership", "Extracurricular", "Take responsibility in an organization or project."],
+    ["Personal projects", "Extracurricular", "Build meaningful projects related to your interests."],
+    ["Competitions", "Extracurricular", "Participate in academic and other competitions."],
+    ["Personal statement", "Application", "Prepare and revise your university essays."],
+    ["Recommendation letters", "Application", "Identify teachers and request recommendations."],
+    ["Academic transcripts", "Application", "Organize your academic records."],
+    ["Certificates and achievements", "Application", "Organize evidence of your achievements."],
+    ["University applications", "Application", "Complete university application requirements."],
+    ["Scholarship research", "Scholarship", "Research suitable scholarship opportunities."],
+    ["Financial documents", "Scholarship", "Prepare required financial documents."],
+    ["Scholarship essays", "Scholarship", "Prepare scholarship-specific essays."],
+    ["Scholarship deadlines", "Scholarship", "Track scholarship application deadlines."]
+  ];
 
-  tasks.push({
-    key: "profile-university-plan",
-    title: "Complete and review your university profile",
-    category: "Planning",
-    priority: "High",
-    description: `Why it matters: The plan should reflect your actual academic stage and goals. Action steps: ${[
-      education ? `Review your current education: ${education}.` : "Add your current grade or education.",
-      major ? `Review your intended subject: ${major}.` : "Add an intended subject if you have one.",
-      country ? `Review your country: ${country}.` : "Add your country for eligibility context.",
-      profile.intended_start_year ? `Check your intended start year: ${profile.intended_start_year}.` : "Add an intended start year."
-    ].join(" ")} Suggested timeline: Complete this week.`,
-    source_url: "",
-    sort_order: 10
-  });
+  const readData = () => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    } catch {
+      return null;
+    }
+  };
 
-  tasks.push({
-    key: "university-shortlist",
-    title: major ? `Research universities for ${major}` : "Build a university shortlist",
-    category: "University research",
-    priority: "High",
-    description: `Why it matters: Course fit, requirements and costs differ by institution. Action steps: Create a reach, target and likely shortlist; compare official course pages, entry requirements, English requirements and application deadlines. Verify that the course includes ${major || "your preferred subject"}. Suggested timeline: ${isEarly ? "Explore over the next 6–8 weeks." : "Finish a first shortlist within 2–4 weeks."}`,
-    source_url: "https://bigfuture.collegeboard.org/college-search",
-    sort_order: 20
-  });
+  const saveData = data => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
 
-  tasks.push({
-    key: "major-project",
-    title: major ? `Start a ${major}-related project` : "Start a major-related project",
-    category: "Major-related project",
-    priority: isEarly ? "Medium" : "High",
-    description: `Why it matters: A real, sustained project demonstrates interest and follow-through. Action steps: Choose one feasible question or problem, set milestones, document your process and reflect on what you learned. ${major ? `Keep the project connected to ${major}.` : "Choose a project connected to the subject you may study."} Suggested timeline: ${isEarly ? "Use 4–8 weeks to make a first version." : "Complete a substantial version within 3–6 months."}`,
-    source_url: "https://ocw.mit.edu/",
-    sort_order: 30
-  });
+  let data = readData();
 
-  if (!isEarly && (grade === 11 || grade === 12 || education)) {
-    tasks.push({
-      key: "academic-readiness",
-      title: "Check test and academic requirements only after confirming target universities",
-      category: "Standardized testing",
-      priority: "Medium",
-      description: "Why it matters: Universities do not have identical testing policies. Action steps: Open each shortlisted university’s official admissions page; confirm whether SAT, ACT, AP, IB, A-Level or another credential is required or recommended; record the university-specific score or subject requirement. SAT 1400+ may be an ambitious example for some selective universities, not a universal requirement. Suggested timeline: Confirm requirements this month and take an official practice test if needed.",
-      source_url: "https://satsuite.collegeboard.org/sat",
-      sort_order: 40
-    });
+  function initializeData(preferences) {
+    data = {
+      preferences,
+      satTarget: 1400,
+      satScore: "",
+      tasks: defaultTasks.map((item, index) => ({
+        id: "default-" + index,
+        title: item[0],
+        category: item[1],
+        description: item[2],
+        status: "Not started",
+        deadline: "",
+        custom: false
+      }))
+    };
+    saveData(data);
+    render();
   }
 
-  tasks.push({
-    key: "leadership-impact",
-    title: "Create measurable impact through one responsibility",
-    category: "Leadership",
-    priority: "Medium",
-    description: "Why it matters: Measured impact is more meaningful than a title alone. Action steps: Choose a club, volunteering role or community initiative; set one measurable goal; record participants, hours or outcomes; keep evidence and reflection. Suggested timeline: Establish the goal now and review progress monthly.",
-    source_url: "https://www.dosomething.org/us",
-    sort_order: 50
-  });
+  function injectStyles() {
+    if (document.getElementById("uc-tracker-styles")) return;
 
-  tasks.push({
-    key: "financial-aid",
-    title: "Research scholarships and financial aid",
-    category: "Financial aid",
-    priority: "High",
-    description: `Why it matters: Eligibility and funding differ by country, institution and application route. Action steps: For each shortlisted university, verify official scholarships and aid; identify need-based or merit-based options; record eligible dates and required documents. ${country ? `Consider opportunities available to students from ${country}, but verify restrictions directly.` : "Verify country restrictions directly with each provider."} Suggested timeline: Begin this term and update the tracker whenever requirements change.`,
-    source_url: "https://bigfuture.collegeboard.org/scholarship-search",
-    sort_order: 60
-  });
-
-  tasks.push({
-    key: "portfolio",
-    title: "Organize a university application portfolio",
-    category: "Application preparation",
-    priority: "Medium",
-    description: "Why it matters: A central record prevents missed documents and supports authentic applications. Action steps: Create folders for transcripts, certificates, recommendations, project evidence, achievements and essay drafts; keep a deadline tracker. Suggested timeline: Set up the structure this week and update it monthly.",
-    source_url: "https://owl.purdue.edu/owl/general_writing/index.html",
-    sort_order: 70
-  });
-
-  return tasks;
-}
-
-async function universityPrepStart() {
-  if (!universityPrepRoot) return;
-
-  const observer = new MutationObserver(() => {
-    const heading = universityPrepRoot.querySelector("h1");
-    const isUniversityPage = heading && /explore universities|universities/i.test(heading.textContent);
-    if (!isUniversityPage || document.getElementById("universityPreparationDashboard")) return;
-
-    const section = document.createElement("section");
-    section.id = "universityPreparationDashboard";
-    section.className = "panel university-prep-dashboard";
-    section.innerHTML = `
-      <div class="university-prep-heading">
-        <div>
-          <span class="eyebrow">PERSONALIZED UNIVERSITY PLAN</span>
-          <h2>University Preparation Dashboard</h2>
-          <p id="universityPrepSummary">Loading profile-based recommendations...</p>
-        </div>
-        <button class="btn secondary" type="button" data-go="profile">Complete profile</button>
-      </div>
-      <div id="universityPrepProfilePrompt"></div>
-      <div class="university-prep-grid">
-        <article><span class="stat-label">PREPARATION</span><strong id="universityPrepProgress">0%</strong><p id="universityPrepCount">Loading progress</p></article>
-        <article><span class="stat-label">CURRENT FOCUS</span><strong id="universityPrepFocus">Your profile</strong><p id="universityPrepFocusDetail">Build a clear academic plan</p></article>
-        <article><span class="stat-label">UPCOMING</span><strong id="universityPrepDeadlines">No deadlines</strong><p>Open deadlines show here</p></article>
-      </div>
-      <div class="section-heading"><h2>Priority tasks</h2><button class="btn" type="button" id="addUniversityPrepTask">Add personal task</button></div>
-      <div id="universityPrepTaskList" class="university-prep-task-list"></div>
-      <form id="universityPrepTaskForm" class="form-grid university-prep-add-form hidden">
-        <div class="form-field"><label>Task title</label><input class="control" name="title" required></div>
-        <div class="form-field"><label>Deadline (optional)</label><input class="control" name="due_date" type="date"></div>
-        <div class="form-field full"><label>Notes</label><textarea class="control" name="description"></textarea></div>
-        <div class="form-field full"><button class="btn" type="submit">Save personal task</button></div>
-      </form>
-      <p id="universityPrepFeedback" class="university-prep-feedback" role="status"></p>
-      <p class="university-prep-note">The existing university directory remains available below this dashboard.</p>
+    const style = document.createElement("style");
+    style.id = "uc-tracker-styles";
+    style.textContent = `
+      #ucTracker { color:var(--text-primary,#202638); }
+      #ucTracker * { box-sizing:border-box; }
+      #ucTracker .uc-card {
+        background:var(--card-bg,#fff);
+        border:1px solid var(--border-color,#e7eaf0);
+        border-radius:15px;
+        padding:17px;
+        margin-bottom:13px;
+      }
+      #ucTracker .uc-grid {
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:10px;
+        margin:18px 0;
+      }
+      #ucTracker .uc-stat {
+        background:var(--card-bg,#fff);
+        border:1px solid var(--border-color,#e7eaf0);
+        border-radius:13px;
+        padding:14px;
+        min-width:0;
+      }
+      #ucTracker .uc-stat strong {
+        display:block;font-size:23px;margin-top:7px;
+      }
+      #ucTracker .uc-muted {color:#7c8494;font-size:13px;}
+      #ucTracker .uc-progress {
+        height:10px;background:#e9edf3;border-radius:20px;
+        overflow:hidden;margin:10px 0;
+      }
+      #ucTracker .uc-progress span {
+        display:block;height:100%;background:#16a36a;
+        border-radius:20px;transition:width .25s;
+      }
+      #ucTracker .uc-btn {
+        border:0;border-radius:9px;padding:10px 15px;
+        background:#5145bd;color:white;font-weight:600;
+        cursor:pointer;margin:3px;
+      }
+      #ucTracker .uc-btn.secondary {
+        background:#eeeefe;color:#5145bd;
+      }
+      #ucTracker .uc-btn.danger {
+        background:#fff0f0;color:#c33;
+      }
+      #ucTracker input,#ucTracker select,#ucTracker textarea {
+        width:100%;padding:11px;border:1px solid #dce0e8;
+        border-radius:9px;background:var(--card-bg,#fff);
+        color:inherit;font:inherit;margin-top:6px;
+      }
+      #ucTracker label {
+        display:block;font-size:13px;font-weight:600;margin:12px 0;
+      }
+      #ucTracker .uc-form-grid {
+        display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:8px;
+      }
+      #ucTracker .uc-task {
+        border:1px solid var(--border-color,#e7eaf0);
+        border-radius:12px;padding:14px;margin:10px 0;
+        background:var(--card-bg,#fff);
+      }
+      #ucTracker .uc-task strong {display:block;margin:7px 0;}
+      #ucTracker .uc-tag {
+        display:inline-block;background:#eeeefe;color:#5145bd;
+        padding:4px 8px;border-radius:20px;font-size:11px;
+      }
+      #ucTracker .uc-completed {
+        color:#16834f;background:#e8f7ee;
+      }
+      #ucTracker .uc-heading {
+        display:flex;justify-content:space-between;
+        align-items:center;gap:10px;flex-wrap:wrap;
+      }
+      #ucTracker .uc-section-title {margin:24px 0 12px;}
+      #ucTracker .uc-hidden {display:none!important;}
+      @media(max-width:600px) {
+        #ucTracker .uc-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+        #ucTracker .uc-form-grid {grid-template-columns:1fr;}
+        #ucTracker .uc-stat strong {font-size:19px;}
+      }
     `;
+    document.head.appendChild(style);
+  }
 
-    universityPrepRoot.prepend(section);
+  function setupScreen() {
+    return `
+      <section id="ucTracker">
+        <div class="uc-card">
+          <span class="uc-tag">UNIVERSITY ADMISSIONS PLANNER</span>
+          <h2>Build Your University Plan</h2>
+          <p class="uc-muted">Tell us your goals. We will create your personal preparation tracker.</p>
 
-    // The site module owns navigation and Supabase. Read its existing visible profile
-    // information through the profile form or the rendered page when available.
-    const profileForm = universityPrepRoot.querySelector("#profileForm");
-    let profile = {};
-    if (profileForm) {
-      const values = Object.fromEntries(new FormData(profileForm));
-      profile = values;
-    }
+          <form id="ucSetupForm">
+            <label>Target university
+              <input name="university" placeholder="e.g. Harvard University" required>
+            </label>
 
-    const summary = document.getElementById("universityPrepSummary");
-    const prompt = document.getElementById("universityPrepProfilePrompt");
-    const missing = [];
-    if (!profile.current_grade && !profile.current_education) missing.push("grade or education");
-    if (!profile.intended_subject) missing.push("intended major");
-    if (!profile.country) missing.push("country");
+            <div class="uc-form-grid">
+              <label>Preferred country
+                <select name="country" required>
+                  <option value="">Choose country</option>
+                  ${["USA","United Kingdom","Canada","Switzerland","Germany","Japan","Australia","Netherlands","Singapore","Other"].map(c => `<option>${c}</option>`).join("")}
+                </select>
+              </label>
+              <label>Scholarship preference
+                <select name="scholarship" required>
+                  <option value="">Choose preference</option>
+                  <option>Fully funded</option>
+                  <option>Partially funded</option>
+                  <option>No scholarship needed</option>
+                  <option>Need-based financial aid</option>
+                </select>
+              </label>
+            </div>
 
-    if (missing.length) {
-      prompt.innerHTML = `<div class="university-prep-profile-prompt"><strong>Complete a few profile details</strong><p>Add ${universityPrepEscape(missing.join(", "))} to make this plan more relevant.</p></div>`;
-    } else {
-      prompt.innerHTML = "";
-    }
+            <div class="uc-form-grid">
+              <label>Intended major
+                <input name="major" placeholder="e.g. Biotechnology" required>
+              </label>
+              <label>Current grade
+                <input name="grade" placeholder="e.g. Grade 9" required>
+              </label>
+              <label>Admission year
+                <select name="year">
+                  ${[2027,2028,2029,2030,2031,2032].map(y => `<option>${y}</option>`).join("")}
+                </select>
+              </label>
+              <label>SAT target score
+                <input name="satTarget" type="number" min="400" max="1600" value="1400">
+              </label>
+            </div>
 
-    if (summary) {
-      const major = profile.intended_subject ? ` for ${universityPrepEscape(profile.intended_subject)}` : "";
-      const grade = profile.current_grade || profile.current_education;
-      summary.textContent = `${grade ? `Preparation plan for ${universityPrepEscape(grade)}` : "Preparation plan"}${major}.`;
-    }
+            <button class="uc-btn" type="submit">Create My Dashboard →</button>
+          </form>
+        </div>
+      </section>
+    `;
+  }
 
-    const taskList = document.getElementById("universityPrepTaskList");
-    if (taskList) {
-      taskList.innerHTML = universityPrepTasks(profile).map((task) => `
-        <article class="university-prep-task">
-          <div>
-            <span class="badge">${universityPrepEscape(task.priority)} priority</span>
-            <strong>${universityPrepEscape(task.title)}</strong>
-            <p>${universityPrepEscape(task.description)}</p>
-            ${task.source_url ? `<a href="${universityPrepEscape(task.source_url)}" target="_blank" rel="noopener noreferrer">Relevant resource ↗</a>` : ""}
+  function dashboardScreen() {
+    const tasks = data.tasks || [];
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === "Completed").length;
+    const progress = total ? Math.round(completed / total * 100) : 0;
+    const remaining = total - completed;
+    const categories = ["Academic","Extracurricular","Application","Scholarship","Other"];
+
+    const categoryHTML = categories.map(category => {
+      const list = tasks.filter(t => t.category === category);
+      if (!list.length) return "";
+      const done = list.filter(t => t.status === "Completed").length;
+      const percent = Math.round(done / list.length * 100);
+
+      return `
+        <div class="uc-card">
+          <div class="uc-heading">
+            <strong>${category}</strong>
+            <span class="uc-muted">${done}/${list.length} completed</span>
           </div>
-        </article>
-      `).join("");
+          <div class="uc-progress"><span style="width:${percent}%"></span></div>
+          <span class="uc-muted">${percent}% complete</span>
+          ${list.map(task => `
+            <div class="uc-task">
+              <div class="uc-heading">
+                <span class="uc-tag ${task.status === "Completed" ? "uc-completed" : ""}">${escapeHTML(task.status)}</span>
+                <span class="uc-muted">${task.deadline ? "Due: " + escapeHTML(task.deadline) : ""}</span>
+              </div>
+              <strong>${escapeHTML(task.title)}</strong>
+              <p class="uc-muted">${escapeHTML(task.description || "")}</p>
+              <div>
+                <button class="uc-btn secondary" data-action="status" data-id="${escapeHTML(task.id)}">Update status</button>
+                <button class="uc-btn secondary" data-action="edit" data-id="${escapeHTML(task.id)}">Edit</button>
+                <button class="uc-btn danger" data-action="delete" data-id="${escapeHTML(task.id)}">Delete</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <section id="ucTracker">
+        <div class="uc-card">
+          <div class="uc-heading">
+            <div>
+              <span class="uc-tag">YOUR PERSONAL PLAN</span>
+              <h2>My University Journey</h2>
+              <p class="uc-muted">${escapeHTML(data.preferences.university)} · ${escapeHTML(data.preferences.country)}</p>
+            </div>
+            <button class="uc-btn secondary" data-action="preferences">Edit plan</button>
+          </div>
+          <p><strong>${escapeHTML(data.preferences.major)}</strong> · ${escapeHTML(data.preferences.scholarship)}</p>
+          <p class="uc-muted">Admission year: ${escapeHTML(data.preferences.year)}</p>
+        </div>
+
+        <div class="uc-card">
+          <div class="uc-heading">
+            <h2>Overall preparation</h2>
+            <strong style="font-size:27px;color:#16a36a">${progress}%</strong>
+          </div>
+          <div class="uc-progress"><span style="width:${progress}%"></span></div>
+          <div class="uc-grid">
+            <div class="uc-stat"><span class="uc-muted">Completed</span><strong>${completed}</strong></div>
+            <div class="uc-stat"><span class="uc-muted">Remaining</span><strong>${remaining}</strong></div>
+            <div class="uc-stat"><span class="uc-muted">Total tasks</span><strong>${total}</strong></div>
+          </div>
+        </div>
+
+        <div class="uc-card">
+          <h3>SAT preparation</h3>
+          <p class="uc-muted">Your SAT target is personal, not a universal university requirement.</p>
+          <div class="uc-form-grid">
+            <label>Target score
+              <input id="ucSatTarget" type="number" min="400" max="1600" value="${Number(data.satTarget) || 1400}">
+            </label>
+            <label>Latest practice score
+              <input id="ucSatScore" type="number" min="400" max="1600" placeholder="Enter score" value="${escapeHTML(data.satScore || "")}">
+            </label>
+          </div>
+          <button class="uc-btn secondary" data-action="save-sat">Save SAT scores</button>
+        </div>
+
+        <div class="uc-heading uc-section-title">
+          <h2>Preparation checklist</h2>
+          <button class="uc-btn" data-action="add">+ Add task</button>
+        </div>
+
+        <div id="ucAddForm" class="uc-card uc-hidden">
+          <h3>Add a task or activity</h3>
+          <form id="ucTaskForm">
+            <label>Task / activity name
+              <input name="title" required placeholder="e.g. Join an international MUN">
+            </label>
+            <div class="uc-form-grid">
+              <label>Category
+                <select name="category">
+                  ${categories.map(c => `<option>${c}</option>`).join("")}
+                </select>
+              </label>
+              <label>Deadline
+                <input name="deadline" type="date">
+              </label>
+            </div>
+            <label>Notes
+              <textarea name="description" placeholder="Add details or achievements"></textarea>
+            </label>
+            <button class="uc-btn" type="submit">Save task</button>
+            <button class="uc-btn secondary" type="button" data-action="cancel-add">Cancel</button>
+          </form>
+        </div>
+
+        ${categoryHTML}
+
+        <div class="uc-card">
+          <h3>Your plan</h3>
+          <p class="uc-muted">University: ${escapeHTML(data.preferences.university)}</p>
+          <p class="uc-muted">Scholarship: ${escapeHTML(data.preferences.scholarship)}</p>
+          <button class="uc-btn secondary" data-action="reset">Reset preparation plan</button>
+        </div>
+      </section>
+    `;
+  }
+
+  function render() {
+    injectStyles();
+    const old = document.getElementById("ucTracker");
+    if (old) old.remove();
+    page.insertAdjacentHTML("afterbegin", data ? dashboardScreen() : setupScreen());
+  }
+
+  function showPreferences() {
+    const old = document.getElementById("ucTracker");
+    if (old) old.outerHTML = setupScreen();
+
+    const form = document.getElementById("ucSetupForm");
+    const p = data.preferences;
+    for (const [key, value] of Object.entries({
+      university: p.university,
+      country: p.country,
+      scholarship: p.scholarship,
+      major: p.major,
+      grade: p.grade,
+      year: p.year,
+      satTarget: data.satTarget
+    })) {
+      const field = form.elements.namedItem(key);
+      if (field) field.value = value || "";
+    }
+  }
+
+  function handleSubmit(event) {
+    const form = event.target;
+
+    if (form.id === "ucSetupForm") {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      const preferences = {
+        university: values.university.trim(),
+        country: values.country,
+        scholarship: values.scholarship,
+        major: values.major.trim(),
+        grade: values.grade.trim(),
+        year: values.year
+      };
+
+      if (data) {
+        data.preferences = preferences;
+        data.satTarget = Number(values.satTarget) || 1400;
+        saveData(data);
+        render();
+      } else {
+        initializeData(preferences);
+        data.satTarget = Number(values.satTarget) || 1400;
+        saveData(data);
+        render();
+      }
+      return;
     }
 
-    const addButton = document.getElementById("addUniversityPrepTask");
-    const form = document.getElementById("universityPrepTaskForm");
-    addButton?.addEventListener("click", () => form?.classList.toggle("hidden"));
+    if (form.id === "ucTaskForm") {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      data.tasks.push({
+        id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2,7),
+        title: values.title.trim(),
+        category: values.category,
+        description: values.description.trim(),
+        deadline: values.deadline,
+        status: "Not started",
+        custom: true
+      });
+      saveData(data);
+      render();
+    }
+  }
+
+  function handleClick(event) {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+    const task = data?.tasks.find(t => t.id === id);
+
+    if (action === "add") {
+      document.getElementById("ucAddForm")?.classList.remove("uc-hidden");
+    }
+
+    if (action === "cancel-add") {
+      document.getElementById("ucAddForm")?.classList.add("uc-hidden");
+    }
+
+    if (action === "preferences") showPreferences();
+
+    if (action === "status" && task) {
+      const statuses = ["Not started","In progress","Completed"];
+      task.status = statuses[(statuses.indexOf(task.status) + 1) % statuses.length];
+      saveData(data);
+      render();
+    }
+
+    if (action === "edit" && task) {
+      const title = prompt("Edit task name:", task.title);
+      if (title === null) return;
+      if (!title.trim()) return alert("Task name cannot be empty.");
+      task.title = title.trim();
+      const notes = prompt("Edit notes:", task.description || "");
+      if (notes !== null) task.description = notes;
+      saveData(data);
+      render();
+    }
+
+    if (action === "delete" && task) {
+      if (!confirm("Delete this task?")) return;
+      data.tasks = data.tasks.filter(t => t.id !== id);
+      saveData(data);
+      render();
+    }
+
+    if (action === "save-sat") {
+      const target = Number(document.getElementById("ucSatTarget").value);
+      const scoreInput = document.getElementById("ucSatScore").value;
+      const score = scoreInput === "" ? "" : Number(scoreInput);
+
+      if (!Number.isInteger(target) || target < 400 || target > 1600 ||
+          (score !== "" && (!Number.isInteger(score) || score < 400 || score > 1600))) {
+        alert("Enter valid SAT scores between 400 and 1600.");
+        return;
+      }
+
+      data.satTarget = target;
+      data.satScore = score;
+      saveData(data);
+      render();
+    }
+
+    if (action === "reset") {
+      if (!confirm("This will delete your saved university plan and tasks. Continue?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      data = null;
+      render();
+    }
+  }
+
+  // Event delegation: listeners are attached once to the page.
+  page.addEventListener("submit", handleSubmit);
+  page.addEventListener("click", handleClick);
+
+  function isUniversitiesPage() {
+    return Boolean(document.querySelector('.nav-link.active[data-page="universities"]'));
+  }
+
+  function syncDashboard() {
+    if (!isUniversitiesPage()) {
+      document.getElementById("ucTracker")?.remove();
+      return;
+    }
+
+    if (!document.getElementById("ucTracker")) render();
+  }
+
+  const observer = new MutationObserver(syncDashboard);
+  observer.observe(page, { childList: true, subtree: true });
+  document.querySelectorAll(".nav-link").forEach(link => {
+    observer.observe(link, { attributes: true, attributeFilter: ["class"] });
   });
 
-  observer.observe(universityPrepRoot, { childList: true, subtree: true });
-}
-
-void universityPrepStart();
+  syncDashboard();
+})();
+      
