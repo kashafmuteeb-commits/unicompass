@@ -42,33 +42,33 @@ function showPostLoginAd() {
   overlay.appendChild(dialog);
   document.body.appendChild(overlay);
 
-  // Load the provider's ad only after an actual successful sign-in/sign-up.
-  window.atOptions = {
-    key: AD_KEY,
-    format: "iframe",
-    height: 250,
-    width: 300,
-    params: {}
-  };
-  const adScript = document.createElement("script");
-  adScript.src = `https://bauval.org/22/${AD_KEY}`;
-  adScript.async = true;
-  adContainer.appendChild(adScript);
+  // Run the supplied provider snippet in a fresh document parser. Ad tags
+  // commonly use document.write(), which is unreliable when injected as a
+  // dynamically added script after the main document has finished loading.
+  const adFrame = document.createElement("iframe");
+  adFrame.title = "Advertisement";
+  adFrame.width = "300";
+  adFrame.height = "250";
+  adFrame.setAttribute("scrolling", "no");
+  adFrame.setAttribute("frameborder", "0");
+  adFrame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
+  adFrame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;width:300px;height:250px;overflow:hidden"><script>window.atOptions={key:"${AD_KEY}",format:"iframe",height:250,width:300,params:{}};<\/script><script src="https://bauval.org/22/${AD_KEY}"><\/script></body></html>`;
+  adContainer.appendChild(adFrame);
 
   closeTimer = window.setTimeout(closeAd, AD_DURATION_MS);
   closeButton.focus({ preventScroll: true });
 }
 
 if (authForm && appView) {
-  // Mark only user-submitted auth attempts; an existing session on page load
-  // must not trigger the ad.
+  // Only trigger after the user submits authentication; restoring an existing
+  // session on page load does not show the ad.
   authForm.addEventListener("submit", () => {
     authSubmissionPending = true;
     window.clearTimeout(pendingTimeout);
     pendingTimeout = window.setTimeout(() => {
       authSubmissionPending = false;
     }, 60_000);
-  });
+  }, true);
 
   const appVisibilityObserver = new MutationObserver(() => {
     const appIsVisible = !appView.classList.contains("hidden") && appView.style.display !== "none";
