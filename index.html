@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/premium.css">
   <link rel="stylesheet" href="css/roadmap-upgrade.css">
   <link rel="stylesheet" href="css/grade-roadmap-dashboard.css">
+  <link rel="stylesheet" href="css/university-prep-dashboard.css">
 </head>
 <body>
   <div id="authView" class="auth-view">
@@ -19,7 +20,7 @@
         <span class="story-kicker">YOUR NEXT CHAPTER STARTS HERE</span>
         <h1 id="storyTitle">A clearer path to the university that's right for you.</h1>
         <p>Bring your goals, applications and daily progress into one calm, focused workspace.</p>
-        <div class="story-visual" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="visual-star star-one">✦</div><div class="visual-star star-two">✦</div><div class="visual-core">U</div></div>
+        <div class="story-visual" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="visual-star star-one">✦</div><div class="visual-star star-two">✦</div><div class="visual-star star-three">·</div></div>
       </div>
       <p class="story-foot">Thoughtful planning for ambitious students.</p>
     </section>
@@ -30,7 +31,7 @@
         <form id="authForm">
           <div id="nameField" class="form-field hidden"><label for="fullName">Full name</label><input type="text" id="fullName" name="fullName" class="control" placeholder="Enter your full name" autocomplete="name"></div>
           <div class="form-field"><label for="email">Email address</label><input type="email" id="email" name="email" class="control" placeholder="you@example.com" autocomplete="email" required></div>
-          <div class="form-field password-field"><div class="password-label-row"><label for="password">Password</label><button type="button" id="forgotButton" class="text-button">Forgot password?</button></div><input type="password" id="password" name="password" class="control" autocomplete="current-password" required><small id="passwordHint">Use at least 8 characters.</small></div>
+          <div class="form-field password-field"><div class="password-label-row"><label for="password">Password</label><button type="button" id="forgotButton" class="text-button">Forgot password?</button></div><input type="password" id="password" name="password" class="control" placeholder="Enter your password" autocomplete="current-password" required><p id="passwordHint" class="field-hint">Use at least 8 characters.</p></div>
           <button type="submit" id="submitButton" class="btn"><span id="submitText">Sign in</span><span class="button-arrow" aria-hidden="true">→</span></button>
         </form>
         <div id="switchCopy" class="auth-switch">New to UniCompass? <button type="button" class="text-button" id="switchMode">Create an account</button></div>
@@ -39,15 +40,16 @@
   </div>
   <div id="appView" class="app-shell hidden">
     <aside class="sidebar"><div class="brand"><span class="brand-mark">U</span><span>UniCompass</span></div><div class="side-label">YOUR WORKSPACE</div>
-      <nav class="sidebar-nav" aria-label="Main navigation"><a class="nav-link active" href="#overview" data-page="overview">Overview</a><a class="nav-link" href="#profile" data-page="profile">Profile</a><a class="nav-link" href="#journal" data-page="journal">Daily journal</a><a class="nav-link" href="#universities" data-page="universities">Universities</a><a class="nav-link" href="#opportunities" data-page="opportunities">Opportunities</a><a class="nav-link" href="#roadmap" data-page="roadmap">Roadmap</a></nav>
-      <div class="sidebar-bottom"><div class="user-mini"><div id="userAvatar" class="avatar">S</div><div><strong id="sidebarName">Student</strong><p id="sidebarEmail"></p></div></div><button id="logoutButton" class="signout-button" type="button">Sign out</button></div>
+      <nav class="sidebar-nav" aria-label="Main navigation"><a class="nav-link active" href="#overview" data-page="overview">Overview</a><a class="nav-link" href="#profile" data-page="profile">Profile</a><a class="nav-link" href="#journal" data-page="journal">Daily Journal</a><a class="nav-link" href="#universities" data-page="universities">Universities</a><a class="nav-link" href="#opportunities" data-page="opportunities">Opportunities</a><a class="nav-link" href="#roadmap" data-page="roadmap">Roadmap</a></nav>
+      <div class="sidebar-bottom"><div class="user-mini"><div id="userAvatar" class="avatar">S</div><div><strong id="sidebarName">Student</strong><p id="sidebarEmail"></p></div></div><button id="logoutButton" class="logout-button" type="button">Sign out</button></div>
     </aside>
-    <main class="main-content"><header class="topbar"><span id="breadcrumb">Workspace / Overview</span><span class="topbar-caption">YOUR STUDENT JOURNEY</span></header><div id="pageContent" class="dashboard-content" aria-live="polite"></div></main>
+    <main class="main-content"><header class="topbar"><span id="breadcrumb">Workspace / Overview</span><span class="topbar-caption">YOUR STUDENT JOURNEY</span></header><div id="pageContent" class="page-content"></div></main>
   </div>
   <script type="module" src="js/site.js"></script>
   <script type="module" src="js/university-details.js"></script>
   <script type="module" src="js/ui-enhancements.js"></script>
   <script type="module" src="js/roadmap-upgrade.js"></script>
   <script type="module" src="js/grade-roadmap-dashboard.js"></script>
+  <script type="module" src="js/university-prep-dashboard.js"></script>
 </body>
 </html>
