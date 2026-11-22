@@ -1,3 +1,5 @@
+import "./dashboard-ad.js";
+
 const password = document.getElementById("password");
 const toggle = document.querySelector(".password-toggle");
 
