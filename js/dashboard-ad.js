@@ -8,6 +8,7 @@ const supabase = createClient(
 const appView = document.getElementById("appView");
 const authView = document.getElementById("authView");
 const pageContent = document.getElementById("pageContent");
+const DISPLAY_DURATION_MS = 4000;
 
 if (appView && authView && pageContent) {
   const slot = document.createElement("aside");
@@ -23,7 +24,9 @@ if (appView && authView && pageContent) {
   pageContent.insertAdjacentElement("afterend", slot);
 
   let adFrame = null;
+  let hideTimer = null;
   let syncVersion = 0;
+  let shownThisSession = false;
 
   // Keep the provider script in a cross-origin sandbox. It receives no app data
   // and cannot read the parent page, Supabase storage, or authentication state.
@@ -44,12 +47,17 @@ if (appView && authView && pageContent) {
 </body>
 </html>`;
 
-  function removeAd() {
+  function removeAd(resetSession = false) {
     slot.hidden = true;
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
     if (adFrame) {
       adFrame.remove();
       adFrame = null;
     }
+    if (resetSession) shownThisSession = false;
   }
 
   function isStudentOverview() {
@@ -65,32 +73,39 @@ if (appView && authView && pageContent) {
     if (!isStudentOverview()) {
       slot.hidden = true;
       if (appView.classList.contains("hidden") || getComputedStyle(appView).display === "none") {
-        removeAd();
+        removeAd(true);
       }
       return;
     }
+
+    if (shownThisSession || adFrame) return;
 
     try {
       const { data, error } = await supabase.auth.getSession();
       if (version !== syncVersion) return;
       if (error || !data.session?.user) {
-        removeAd();
+        removeAd(true);
         return;
       }
 
       slot.hidden = false;
-      if (!adFrame) {
-        adFrame = document.createElement("iframe");
-        adFrame.title = "Advertisement";
-        adFrame.width = "300";
-        adFrame.height = "250";
-        adFrame.loading = "lazy";
-        adFrame.referrerPolicy = "no-referrer";
-        adFrame.setAttribute("sandbox", "allow-scripts allow-popups");
-        adFrame.style.cssText = "display:block;width:100%;max-width:300px;height:250px;margin:0 auto;border:0;";
-        adFrame.srcdoc = adDocument;
-        slot.append(adFrame);
-      }
+      adFrame = document.createElement("iframe");
+      adFrame.title = "Advertisement";
+      adFrame.width = "300";
+      adFrame.height = "250";
+      adFrame.loading = "eager";
+      adFrame.referrerPolicy = "no-referrer";
+      adFrame.setAttribute("sandbox", "allow-scripts allow-popups");
+      adFrame.style.cssText = "display:block;width:100%;max-width:300px;height:250px;margin:0 auto;border:0;";
+      adFrame.srcdoc = adDocument;
+      slot.append(adFrame);
+      shownThisSession = true;
+
+      // Display immediately after authenticated overview is confirmed, then
+      // remove the ad frame after four seconds as requested.
+      hideTimer = window.setTimeout(() => {
+        removeAd();
+      }, DISPLAY_DURATION_MS);
     } catch (error) {
       console.warn("The dashboard advertisement could not be initialized.", error);
       removeAd();
