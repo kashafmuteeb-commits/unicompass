@@ -1,0 +1,37 @@
+/* Aspire Fellowship opportunity card */
+.aspire-card { margin-top:18px; border:1px solid #dfe5f2; overflow:hidden; }
+.aspire-card-match { border-color:#9bb8f2; box-shadow:0 12px 30px rgba(52,91,170,.08); }
+.aspire-card-header { display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+.aspire-brand-mark { display:grid; place-items:center; width:54px; height:54px; flex:none; border-radius:16px; color:#fff; font-size:26px; font-weight:800; background:linear-gradient(145deg,#394a9a,#8066cd); }
+.aspire-title-wrap { min-width:0; flex:1; }
+.aspire-title-wrap h2 { margin:8px 0 3px; }
+.aspire-title-wrap p,.aspire-match-context { margin:0; color:var(--muted); }
+.aspire-labels { display:flex; flex-wrap:wrap; gap:6px; }
+.aspire-label { padding:5px 9px; border-radius:999px; background:#edf2ff; color:#354c9b; font-size:12px; font-weight:750; }
+.aspire-label-light { background:#f3efff; color:#6945a7; }
+.aspire-match-tag { padding:7px 10px; border-radius:999px; background:#e9f8ef; color:#17663a; font-size:12px; font-weight:750; }
+.aspire-match-context { margin:14px 0; font-size:13px; }
+.aspire-details-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+.aspire-details-grid section { padding:14px; border:1px solid var(--border); border-radius:12px; }
+.aspire-details-grid h3 { margin:0 0 7px; font-size:14px; }
+.aspire-details-grid p { margin:0; color:var(--muted); line-height:1.55; }
+.aspire-details-grid .aspire-aid-box { grid-column:1/-1; border-color:#e8c974; background:#fff9e8; }
+.aspire-aid-box p { color:#594719; }
+.aspire-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:16px 0 22px; }
+.aspire-eligibility-link { font-weight:700; color:var(--primary); }
+.aspire-tracker { padding:16px; border-radius:14px; background:#f7f8fc; }
+.aspire-tracker h3 { margin:0 0 12px; }
+.aspire-tracker-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.aspire-tracker-fields label,.aspire-inquiry-label { display:grid; gap:6px; font-size:13px; font-weight:700; }
+.aspire-inquiry-label { margin:12px 0; }
+.aspire-tracker [data-aspire-save-tracking] { margin-top:4px; }
+.aspire-feedback { min-height:18px; margin:9px 0 0; color:#17663a; font-size:13px; }
+.aspire-feedback.is-error { color:#a52a2a; }
+@media(max-width:680px) {
+  .aspire-card-header { align-items:flex-start; flex-wrap:wrap; }
+  .aspire-match-tag { margin-left:68px; }
+  .aspire-details-grid,.aspire-tracker-fields { grid-template-columns:1fr; }
+  .aspire-details-grid .aspire-aid-box { grid-column:auto; }
+  .aspire-actions { align-items:stretch; flex-direction:column; }
+  .aspire-actions .btn { text-align:center; }
+}
