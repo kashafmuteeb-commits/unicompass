@@ -1,0 +1,25 @@
+/* University Preparation Dashboard */
+.university-prep-dashboard { margin: 0 0 20px; }
+.university-prep-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.university-prep-heading h2 { margin: 8px 0 6px; }
+.university-prep-heading p { margin: 0; color: var(--muted); }
+.university-prep-profile-prompt { margin-top:16px; padding:12px 14px; border:1px solid #f1d49a; border-radius:12px; background:#fff9e9; }
+.university-prep-profile-prompt p { margin:5px 0 0; }
+.university-prep-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:18px 0 22px; }
+.university-prep-grid article { padding:16px; border:1px solid var(--border); border-radius:14px; background:#fff; }
+.university-prep-grid strong { display:block; margin:7px 0 4px; font-size:18px; }
+.university-prep-grid p { margin:0; color:var(--muted); }
+.university-prep-task-list { display:grid; gap:12px; }
+.university-prep-task { display:grid; padding:16px; border:1px solid var(--border); border-radius:14px; background:#fff; }
+.university-prep-task .badge { display:inline-block; margin-bottom:8px; }
+.university-prep-task strong { display:block; font-size:16px; }
+.university-prep-task p { margin:8px 0; line-height:1.55; color:var(--muted); }
+.university-prep-task a { color:var(--primary); font-weight:700; }
+.university-prep-add-form { margin-top:14px; }
+.university-prep-feedback { min-height:20px; margin:10px 0 0; }
+.university-prep-note { margin:18px 0 0; color:var(--muted); font-size:13px; }
+.hidden { display:none !important; }
+@media (max-width:760px) {
+  .university-prep-heading { flex-direction:column; }
+  .university-prep-grid { grid-template-columns:1fr; }
+}
